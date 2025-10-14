@@ -1,4 +1,4 @@
-from matrix import Matrix
+from core.matrix import Matrix
 
 def transpose(matrix: Matrix) -> Matrix:
     """

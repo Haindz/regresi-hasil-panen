@@ -1,5 +1,5 @@
 # matriks/operations/adder.py
-from matrix import Matrix
+from core.matrix import Matrix
 
 def add_matrices(matrix1, matrix2):
     """

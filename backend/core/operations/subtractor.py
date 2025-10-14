@@ -1,5 +1,5 @@
 # matriks/operations/subtractor.py
-from matrix import Matrix
+from core.matrix import Matrix
 def subtract_matrices(matrix1, matrix2):
     """
     Melakukan operasi pengurangan pada dua objek matriks.

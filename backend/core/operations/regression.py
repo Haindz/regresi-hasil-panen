@@ -1,7 +1,7 @@
-from matrix import Matrix
-from operations.multiplier import multiply_matrices as multiply
-from operations.inverse import inverse
-from operations.transpose import transpose
+from core.matrix import Matrix
+from core.operations.multiplier import multiply_matrices as multiply
+from core.operations.inverse import inverse
+from core.operations.transpose import transpose
 import numpy as np
 
 class LinearRegression:

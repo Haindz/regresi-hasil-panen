@@ -1,5 +1,5 @@
 import csv
-from matrix import Matrix
+from core.matrix import Matrix
 
 def import_from_csv(file_path: str, delimiter: str = ',', skip_header: bool = False) -> Matrix:
     """
