@@ -3,7 +3,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const submitBtn = document.getElementById('submitBtn');
     const equationEl = document.getElementById('equation');
     const statusEl = document.getElementById('status');
+    const featureSelect = document.getElementById('featureSelect');
     let myChart;
+    let chartInstance;
+    let parsedData = [];
+    let headers = [];
 
     submitBtn.addEventListener('click', async () => {
         const file = fileInput.files[0];
@@ -21,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             // Lakukan request POST ke API Flask Anda
-            const response = await fetch('http://127.0.0.1:5000/regresi', {
+            const response = await fetch('http://127.0.0.1:5000/predict', {
                 method: 'POST',
                 body: formData,
             });
@@ -29,102 +33,116 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
 
             if (!response.ok) {
-                // Tangani error dari server Flask
                 throw new Error(result.error || 'Terjadi kesalahan di server.');
             }
-            
-            // Karena API hanya mengembalikan koefisien, kita perlu membaca file CSV
-            // secara lokal untuk bisa menampilkan scatter plot data aslinya.
-            const dataPoints = await parseCSV(file);
-            
-            // Ekstrak koefisien dari respons API
-            const beta = result.koefisien_regresi;
-            const intercept = beta[0][0];
-            const slope = beta[1][0];
 
-            // Tampilkan hasil
-            equationEl.textContent = `Persamaan Regresi: y = ${slope.toFixed(4)}x + ${intercept.toFixed(4)}`;
-            statusEl.textContent = 'Analisis berhasil diterima dari server!';
-            
-            // Render grafik
-            renderChart(dataPoints, slope, intercept);
+            headers = result.header;
+            parsedData = await parseCSV(file);
+
+            const betas = result.koefisien.map(row => row[0]);
+            const equation = headers.slice(0, -1)
+                .map((h, i) => `${betas[i+1].toFixed(3)}×${h}`)
+                .join(' + ');
+            equationEl.textContent = `y = ${betas[0].toFixed(3)} + ${equation}`;
+            statusEl.textContent = 'Analisis berhasil diterima!';
+
+            // Buat dropdown fitur
+            featureSelect.innerHTML = '';
+            headers.slice(0, -1).forEach((h, i) => {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = h;
+                featureSelect.appendChild(opt);
+            });
+
+            // Render plot pertama
+            renderScatter(headers[0], betas, parsedData);
+
+            // Update plot saat ganti fitur
+            featureSelect.addEventListener('change', e => {
+                const index = parseInt(e.target.value);
+                renderScatter(headers[index], betas, parsedData, index);
+            });
 
         } catch (error) {
-            console.error('Error:', error);
+            console.error(error);
             equationEl.textContent = `Error: ${error.message}`;
             statusEl.textContent = 'Gagal melakukan analisis.';
         }
     });
 
-    function renderChart(data, slope, intercept) {
-        const ctx = document.getElementById('regressionChart').getContext('2d');
-        if (myChart) myChart.destroy();
-
-        const xValues = data.map(p => p.x);
-        const minX = Math.min(...xValues);
-        const maxX = Math.max(...xValues);
-        const regressionLine = [
-            { x: minX, y: slope * minX + intercept },
-            { x: maxX, y: slope * maxX + intercept }
-        ];
-
-        myChart = new Chart(ctx, { /* ... (konfigurasi chart sama seperti sebelumnya) ... */ });
-    }
-
-    // Fungsi helper untuk membaca CSV di sisi klien (untuk scatter plot)
-    function parseCSV(file) {
+    async function parseCSV(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = e => {
-                const text = e.target.result;
-                const lines = text.trim().split('\n').slice(1);
-                const points = lines.map(line => {
-                    const [x, y] = line.split(',').map(parseFloat);
-                    return { x, y };
-                });
-                resolve(points);
+                const text = e.target.result.trim();
+                const [headerLine, ...lines] = text.split('\n');
+                const header = headerLine.split(',');
+                const rows = lines.map(line => line.split(',').map(parseFloat));
+                resolve({ header, rows });
             };
             reader.onerror = reject;
             reader.readAsText(file);
         });
     }
-});
 
-// Sisipkan konfigurasi Chart.js yang lengkap di dalam fungsi renderChart
-// (Sama seperti kode sebelumnya, sengaja dipersingkat di sini agar fokus pada perubahan)
-function renderChart(data, slope, intercept) {
-    const ctx = document.getElementById('regressionChart').getContext('2d');
-    if (window.myChart) window.myChart.destroy();
-    
-    const xValues = data.map(p => p.x);
-    const minX = Math.min(...xValues);
-    const maxX = Math.max(...xValues);
-    const regressionLine = [{ x: minX, y: slope * minX + intercept }, { x: maxX, y: slope * maxX + intercept }];
-    
-    window.myChart = new Chart(ctx, {
-        type: 'scatter',
-        data: {
-            datasets: [{
-                label: 'Data Asli',
-                data: data,
-                backgroundColor: 'rgba(75, 192, 192, 0.6)'
-            }, {
-                label: 'Garis Regresi dari API',
-                data: regressionLine,
-                type: 'line',
-                borderColor: 'rgba(255, 99, 132, 1)',
-                backgroundColor: 'transparent',
-                borderWidth: 2,
-                pointRadius: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                x: { type: 'linear', position: 'bottom', title: { display: true, text: 'Variabel X' } },
-                y: { title: { display: true, text: 'Variabel Y' } }
+    function renderScatter(selectedFeature, betas, dataObj, featureIndex = 0) {
+        const ctx = document.getElementById('regressionChart').getContext('2d');
+        const xIndex = featureIndex;
+        const yIndex = dataObj.header.length - 1;
+        const dataPoints = dataObj.rows.map(row => ({
+            x: row[xIndex],
+            y: row[yIndex]
+        }));
+
+        // Hitung prediksi untuk garis regresi
+        const minX = Math.min(...dataPoints.map(p => p.x));
+        const maxX = Math.max(...dataPoints.map(p => p.x));
+        const predict = x => {
+            let y = betas[0];
+            dataObj.header.slice(0, -1).forEach((_, i) => {
+                y += betas[i + 1] * (i === xIndex ? x : 0);
+            });
+            return y;
+        };
+        const lineData = [
+            { x: minX, y: predict(minX) },
+            { x: maxX, y: predict(maxX) }
+        ];
+
+        if (chartInstance) chartInstance.destroy();
+
+        chartInstance = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [
+                    {
+                        label: 'Data Asli',
+                        data: dataPoints,
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)'
+                    },
+                    {
+                        label: `Garis Regresi (${selectedFeature})`,
+                        data: lineData,
+                        type: 'line',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 2,
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        title: { display: true, text: selectedFeature }
+                    },
+                    y: {
+                        title: { display: true, text: 'Hasil_Panen' }
+                    }
+                }
             }
-        }
-    });
-}
+        });
+    }
+});

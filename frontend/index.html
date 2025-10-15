@@ -11,11 +11,20 @@
     <div class="container">
         <h1>Klien Regresi Linear dengan Flask API</h1>
         <p>Pilih file .CSV Anda untuk dianalisis oleh server backend.</p>
-        
+
         <div class="controls">
             <input type="file" id="csvFileInput" accept=".csv">
             <button id="submitBtn">Hitung Regresi via API</button>
         </div>
+
+        <!-- 🔽 Tambahkan dropdown di sini -->
+        <div class="feature-select">
+            <label for="featureSelect"><strong>Pilih Fitur untuk Visualisasi:</strong></label>
+            <select id="featureSelect">
+                <option value="">(Belum ada data)</option>
+            </select>
+        </div>
+        <!-- 🔼 Sampai sini -->
 
         <div class="chart-container">
             <canvas id="regressionChart"></canvas>
@@ -30,3 +39,4 @@
     <script src="script.js"></script>
 </body>
 </html>
+
