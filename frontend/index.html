@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klien Regresi Linear</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Klien Regresi Linear dengan Flask API</h1>
+        <p>Pilih file .CSV Anda untuk dianalisis oleh server backend.</p>
+        
+        <div class="controls">
+            <input type="file" id="csvFileInput" accept=".csv">
+            <button id="submitBtn">Hitung Regresi via API</button>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="regressionChart"></canvas>
+        </div>
+
+        <div id="results" class="results-container">
+            <h2>Hasil Analisis dari Server</h2>
+            <p id="equation">Menunggu data untuk dikirim...</p>
+            <p id="status"></p>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
