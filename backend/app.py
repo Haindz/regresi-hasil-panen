@@ -1,8 +1,10 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from core.exporters.csv_importer import import_from_csv
 from core.operations.regression import LinearRegression
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route("/predict", methods=["POST"])
 def predict():
