@@ -1,0 +1,27 @@
+version: '3'
+services:
+  backend:
+    build: .
+    container_name: flask_regresi
+    ports:
+      - "5000:5000"
+    networks:
+      - app_net
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    image: nginx:alpine
+    container_name: regresi-hasil-panen-frontend-1
+    volumes:
+      - ./frontend:/usr/share/nginx/html
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - app_net
+
+networks:
+  app_net:
+    driver: bridge
