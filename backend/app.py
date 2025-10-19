@@ -7,6 +7,35 @@ from core.operations.regression import LinearRegression
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
+@app.route("/")
+def home():
+    return """
+    <html>
+        <head>
+            <title>Aplikasi Regresi Hasil Panen</title>
+            <style>
+                body { font-family: Arial; background-color: #f4f4f4; text-align: center; margin-top: 100px; }
+                h1 { color: #2c3e50; }
+                button {
+                    padding: 12px 24px;
+                    font-size: 16px;
+                    background-color: #3498db;
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    cursor: pointer;
+                }
+                button:hover { background-color: #2980b9; }
+            </style>
+        </head>
+        <body>
+            <h1>Selamat Datang di Aplikasi Regresi Hasil Panen</h1>
+            <p>Klik tombol di bawah ini untuk memulai analisis Anda.</p>
+            <button onclick="window.location.href='http://127.0.0.1:8080'">Mulai Analisis</button>
+        </body>
+    </html>
+    """
+
 @app.route("/predict", methods=["POST"])
 def predict():
     if 'file' not in request.files:
